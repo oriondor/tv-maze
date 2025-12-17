@@ -1,0 +1,37 @@
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  font-family: var(--font-sans);
+  background: var(--bg-app);
+  color: var(--text-primary);
+
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  background: var(--bg-dashboard-gradient);
+
+  max-width: 100%;
+  overflow-x: hidden;
+
+  line-height: 1.5;
+}
+
+/* ---------- Disable double tap ---------- */
+button,
+a,
+input,
+select,
+textarea {
+  touch-action: manipulation;
+}
