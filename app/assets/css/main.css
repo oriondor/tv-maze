@@ -34,4 +34,5 @@ input,
 select,
 textarea {
   touch-action: manipulation;
+  color: var(--text-primary);
 }

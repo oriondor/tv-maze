@@ -20,7 +20,7 @@
   --text-md: 1rem;
   --text-lg: 1.125rem;
   --text-xl: 1.25rem;
-  --text-2xl: 1.5rem;
+  --text-2xl: 1.75rem;
 
   /* ---------- Spacing ---------- */
   --space-1: 4px;
@@ -92,11 +92,6 @@
   --input-bg: #0f1424;
   --input-bg-focus: #121835;
   --input-placeholder: #6f7599;
-
-  /* ---------- Ratings ---------- */
-  --rating-good: #4ade80;
-  --rating-mid: #facc15;
-  --rating-bad: #f87171;
 }
 
 /* =========================================================
@@ -107,7 +102,7 @@
   /* ---------- Backgrounds ---------- */
   --bg-app: #f6f7fb;
   --bg-surface: #ffffff;
-  --bg-surface-elevated: #f1f3f9;
+  --bg-surface-elevated: #dde4f6;
 
   --bg-dashboard-gradient: radial-gradient(
       1200px 600px at 20% -10%,
