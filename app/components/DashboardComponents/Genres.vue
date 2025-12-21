@@ -6,11 +6,13 @@ function toggle() {
 }
 
 const genres = ref(Array.from({ length: 100 }, (_, index) => index));
-const selectedGenre = ref(null);
+const selectedGenre = ref<string | null>(null);
 
-function selectGenre(item) {
+function selectGenre(item: string) {
   selectedGenre.value = item;
 }
+
+const { shows } = useShows();
 </script>
 
 <template>
