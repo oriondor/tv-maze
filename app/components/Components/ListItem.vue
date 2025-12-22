@@ -9,12 +9,10 @@ const props = withDefaults(defineProps<Props>(), {
   appearance: "control",
 });
 
-const { component } = toRefs(props);
-
 const attrs = useAttrs();
 
 const componentProps = computed(() => {
-  if (component.value === "button") {
+  if (props.component === "button") {
     return {
       type: "button",
     };

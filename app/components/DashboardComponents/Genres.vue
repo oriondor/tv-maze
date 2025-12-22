@@ -1,18 +1,28 @@
 <script setup lang="ts">
+interface Props {
+  genres: GenreCounts | null;
+}
+
+const props = defineProps<Props>();
+
+const { genres } = toRefs(props);
+
+const selectedGenre = defineModel<string | null>();
+
 const isOpen = ref(false);
 
 function toggle() {
   isOpen.value = !isOpen.value;
 }
 
-const genres = ref(Array.from({ length: 100 }, (_, index) => index));
-const selectedGenre = ref<string | null>(null);
-
 function selectGenre(item: string) {
   selectedGenre.value = item;
 }
 
-const { shows } = useShows();
+watch(genres, () => {
+  if (!selectedGenre.value && genres.value)
+    selectedGenre.value = Object.keys(genres.value)[0] as string;
+});
 </script>
 
 <template>
@@ -21,15 +31,15 @@ const { shows } = useShows();
   </button>
 
   <aside class="genres-wrapper" :class="{ open: isOpen }">
-    Pick a genre
-    <base-vertical-list :items="genres">
+    <h3>Pick a genre</h3>
+    <base-vertical-list v-if="genres" :items="Object.keys(genres)">
       <template #item="{ item }">
         <base-switch-button
           size="lg"
           :model-value="selectedGenre === item"
-          @update:model-value="selectGenre(item)"
+          @update:model-value="selectGenre(item as string)"
         >
-          {{ item }}
+          {{ item }} ({{ genres[item as string] }})
         </base-switch-button>
       </template>
     </base-vertical-list>

@@ -1,26 +1,25 @@
 <script setup lang="ts">
-withDefaults(
-  defineProps<{
-    size?: "sm" | "lg";
-  }>(),
-  {
-    size: "lg",
-  }
-);
+interface Props {
+  size?: "sm" | "lg";
+  show: Show;
+}
+withDefaults(defineProps<Props>(), {
+  size: "lg",
+});
 </script>
 
 <template>
   <div class="show-card" :data-size="size">
     <div class="show-card__media">
-      <slot name="media" />
+      <img :src="show.image.medium" />
     </div>
 
     <div class="show-card__overlay">
-      <slot name="overlay" />
+      {{ show.summary }}
     </div>
 
     <div class="show-card__content">
-      <slot />
+      {{ show.name }}
     </div>
   </div>
 </template>
@@ -31,7 +30,6 @@ withDefaults(
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  /* max-width: 80%; */
 
   background: var(--bg-surface);
   border-radius: var(--radius-xl);
@@ -67,9 +65,11 @@ withDefaults(
 }
 
 .show-card__content {
-  padding: var(--space-4);
+  padding: var(--space-1);
   color: var(--text-primary);
   font-family: var(--font-display);
+  font-size: var(--text-lg);
+  font-weight: bold;
 }
 
 .show-card__overlay {

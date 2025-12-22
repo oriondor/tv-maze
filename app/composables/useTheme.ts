@@ -12,7 +12,7 @@ export function useTheme() {
 
   function autoMode(date = new Date()): "light" | "dark" {
     const h = date.getHours();
-    return h >= 7 && h < 19 ? "light" : "light";
+    return h >= 7 && h < 19 ? "light" : "dark";
   }
 
   function msToNextSwitch() {

@@ -3,11 +3,14 @@ import { getShowsCache, setShowsCache } from "../cache/shows.cache";
 import { broadcastShowsUpdate } from "../streams/shows.stream";
 import {
   genresSatisfied,
+  getGenreCounts,
   resetGenreCounts,
   setGenreCounts,
 } from "./genres.service";
 
 const MAX_PAGES = 10;
+
+let coveragePromise: Promise<void> | null = null;
 
 export async function getCachedShows() {
   return await getShowsCache();
@@ -16,15 +19,37 @@ export async function getCachedShows() {
 export async function fetchAndMergePage(page: number) {
   const pageData = await fetchShowsPage(page);
 
-  const cache = await getShowsCache();
+  const showsCache = await getShowsCache();
 
-  mergeById(cache.byId, pageData);
+  showsCache.byId = mergeById(showsCache.byId, pageData);
 
-  await setShowsCache(cache);
+  await setShowsCache(showsCache);
+  const genresCache = await getGenreCounts();
 
-  broadcastShowsUpdate(cache.byId);
+  broadcastShowsUpdate(pageData, genresCache);
 
   return pageData;
+}
+
+/**
+ * Ensures full genre coverage runs only once globally.
+ * Multiple clients connecting will wait for the same promise instead of triggering concurrent runs.
+ */
+export async function ensureFullCoverage() {
+  // If already running, return the existing promise
+  if (coveragePromise) {
+    return coveragePromise;
+  }
+
+  // Start new coverage run and assign immediately (atomic check-and-set)
+  coveragePromise = runCoverage();
+
+  try {
+    await coveragePromise;
+  } finally {
+    // Clear the promise when done so future calls can run again
+    coveragePromise = null;
+  }
 }
 
 /**
@@ -32,36 +57,41 @@ export async function fetchAndMergePage(page: number) {
  * of pages from the past
  * or in case if there is no cache (cold start) - tries to satisfy for min shows per genre
  */
-export async function ensureFullCoverage() {
+async function runCoverage() {
   let page = 0;
-  const cache = await getShowsCache();
-  const pagesFromPreviousCache = cache?.pagesFetched;
-
-  await resetGenreCounts();
+  const showsCache = await getShowsCache();
+  const pagesFromPreviousCache = showsCache?.pagesFetched;
 
   if (pagesFromPreviousCache) {
     while (page <= pagesFromPreviousCache) {
       await fetchAndMergePage(page);
       page++;
     }
-    // Need to fetch the whole new cache again to revalidate genre counts
+    // After reevaluating the cache - reset all genre counts and set new ones from fresh cache
+    await resetGenreCounts();
     const freshCache = await getShowsCache();
-    await setGenreCounts(Object.values(freshCache.byId));
+    const newGenreCounts = await setGenreCounts(Object.values(freshCache.byId));
+    broadcastShowsUpdate(null, newGenreCounts);
     return;
   }
+
+  await resetGenreCounts();
 
   while (page < MAX_PAGES) {
     const pageData = await fetchAndMergePage(page);
 
+    // According to data from latest payload - get new genre counts
     const counts = await setGenreCounts(pageData);
 
+    // If fresh genre counts satosfy all conditions - stop the loop
     if (genresSatisfied(counts)) {
       break;
     }
 
     page++;
-    cache.pagesFetched = page;
   }
 
-  await setShowsCache(cache);
+  const freshCache = await getShowsCache();
+  freshCache.pagesFetched = page;
+  await setShowsCache(freshCache);
 }

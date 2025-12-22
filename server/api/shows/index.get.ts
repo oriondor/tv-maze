@@ -1,7 +1,10 @@
+import { getGenreCounts } from "~~/server/services/genres.service";
 import { getCachedShows } from "../../services/shows.service";
+import { CachedResponse } from "~~/shared/types/Show";
 
 export default defineEventHandler(async () => {
-  const cache = await getCachedShows();
+  const shows = await getCachedShows();
+  const genres = await getGenreCounts();
 
-  return cache?.byId ?? [];
+  return { shows: shows?.byId ?? [], genres } as CachedResponse;
 });

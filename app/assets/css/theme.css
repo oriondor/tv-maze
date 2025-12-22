@@ -106,10 +106,10 @@
 
   --bg-dashboard-gradient: radial-gradient(
       1200px 600px at 20% -10%,
-      #8ba1f9 0%,
+      #6884f6 0%,
       transparent 60%
     ),
-    linear-gradient(180deg, #f6f7fb 0%, #98b5f8 100%);
+    linear-gradient(180deg, #f6f7fb 0%, #608aed 100%);
 
   /* ---------- Text ---------- */
   --text-primary: #121427;

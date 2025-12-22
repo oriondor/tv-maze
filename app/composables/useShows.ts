@@ -1,32 +1,37 @@
+import type { BroadcastResponse, CachedResponse } from "~~/shared/types/Show";
+
 let sse: EventSource | null = null;
 let initialized = false;
 
 export function useShows() {
-  const state = useState<ShowById>("shows", () => ({}));
+  const shows = useState<ShowById>("shows", () => ({}));
+  const genres = useState<GenreCounts>("genres", () => ({}));
 
   async function fetchInitial() {
     if (initialized) return;
 
     initialized = true;
 
-    const res = await $fetch<ShowById>("/api/shows");
+    const response = await $fetch<CachedResponse>("/api/shows");
 
-    state.value = res;
+    shows.value = response.shows;
+    genres.value = response.genres;
   }
 
   function connectSSE() {
     if (!process.client) return;
-    console.log("I opened");
 
     if (sse) return;
 
     sse = new EventSource("/api/shows/stream");
 
     sse.onmessage = (event) => {
-      const data = JSON.parse(event.data) as ShowById;
-      console.log("received payload", data);
+      const response: string = event.data;
+      const data: BroadcastResponse = JSON.parse(response);
 
-      state.value = mergeById(state.value, data);
+      if (data.shows) shows.value = mergeById(shows.value, data.shows);
+
+      genres.value = data.genres;
     };
 
     sse.onerror = () => {
@@ -49,6 +54,7 @@ export function useShows() {
   onBeforeUnmount(disconnectSSE);
 
   return {
-    shows: computed(() => state.value),
+    shows: computed(() => shows.value),
+    genres: computed(() => genres.value),
   };
 }

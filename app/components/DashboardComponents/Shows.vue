@@ -1,13 +1,43 @@
 <script setup lang="ts">
 import { useWindowSize } from "@vueuse/core";
 
+interface Props {
+  shows: Show[] | null;
+}
+
+const props = defineProps<Props>();
+
+const { shows } = toRefs(props);
+
 const { height } = useWindowSize();
-const isCompactMode = computed(() => height.value < 900);
+const isCompactMode = computed(() => height.value > 470 && height.value < 1030);
 
 const { containerRef, registerSection, onTouchStart, onTouchEnd } =
   useVerticalSnapScroll({
     enabled: isCompactMode,
   });
+
+const ratingThreshold = 8;
+
+const sortedByRating = computed(() => {
+  const top: Show[] = [];
+  const other: Show[] = [];
+
+  if (!shows.value) return { top, other };
+
+  for (const show of shows.value) {
+    const rating = show.rating?.average ?? 0;
+    (rating >= ratingThreshold ? top : other).push(show);
+  }
+
+  const byRatingDesc = (a: Show, b: Show) =>
+    (b.rating?.average ?? 0) - (a.rating?.average ?? 0);
+
+  top.sort(byRatingDesc);
+  other.sort(byRatingDesc);
+
+  return { top, other };
+});
 </script>
 
 <template>
@@ -20,19 +50,18 @@ const { containerRef, registerSection, onTouchStart, onTouchEnd } =
     <section :ref="registerSection">
       <h1>Top rated shows</h1>
       <div class="shows-top">
-        <show-card v-for="n in 10" :key="n">
-          Show {{ n }}
-          <template #overlay>Top show</template>
-        </show-card>
+        <show-card v-for="show in sortedByRating.top" :key="show.id" :show />
       </div>
     </section>
     <section :ref="registerSection">
       <h3>Other shows</h3>
       <div class="shows-bottom">
-        <show-card v-for="n in 20" :key="n" size="sm">
-          Show {{ n }}
-          <template #overlay>Details</template>
-        </show-card>
+        <show-card
+          v-for="show in sortedByRating.other"
+          :key="show.id"
+          :show
+          size="sm"
+        />
       </div>
     </section>
   </div>
@@ -42,7 +71,6 @@ const { containerRef, registerSection, onTouchStart, onTouchEnd } =
 .shows-shell {
   height: 100vh;
   width: 100%;
-  overflow: hidden;
   display: flex;
   flex-direction: column;
   align-items: stretch;

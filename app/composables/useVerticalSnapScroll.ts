@@ -1,4 +1,4 @@
-import { ref, onMounted, onUnmounted, type Ref } from "vue";
+import { ref, onMounted, onUnmounted, watch, type Ref } from "vue";
 
 interface UseVerticalSnapScrollOptions {
   enabled: Ref<boolean>;
@@ -16,15 +16,40 @@ export function useVerticalSnapScroll(options: UseVerticalSnapScrollOptions) {
   let isAnimating = false;
   let touchStartY = 0;
 
+  // Update overflow based on enabled state
+  function updateOverflow() {
+    if (!containerRef.value) return;
+
+    if (enabled.value) {
+      // Snap scroll enabled - disable natural scroll
+      containerRef.value.style.overflowY = "hidden";
+    } else {
+      // Snap scroll disabled - enable natural scroll
+      containerRef.value.style.overflowY = "auto";
+    }
+  }
+
+  // Watch enabled state and toggle overflow
+  watch(enabled, updateOverflow);
+
+  // Watch containerRef and apply overflow when it becomes available
+  watch(containerRef, updateOverflow);
+
   function registerSection(el: Element | ComponentPublicInstance | null) {
     if (el instanceof HTMLElement) {
-      sections.push(el);
+      // Avoid duplicates - check if element already registered
+      if (!sections.includes(el)) {
+        sections.push(el);
+      }
     }
   }
 
   function scrollTo(index: number) {
     if (isAnimating) return;
-    const el = sections[index];
+
+    // Filter out disconnected elements (from previous renders)
+    const connectedSections = sections.filter((s) => s.isConnected);
+    const el = connectedSections[index];
     if (!el) return;
 
     isAnimating = true;
@@ -51,7 +76,10 @@ export function useVerticalSnapScroll(options: UseVerticalSnapScrollOptions) {
 
     e.preventDefault();
 
-    if (e.deltaY > 0 && activeIndex.value < sections.length - 1) {
+    // Use connected sections for bounds checking
+    const connectedSections = sections.filter((s) => s.isConnected);
+
+    if (e.deltaY > 0 && activeIndex.value < connectedSections.length - 1) {
       scrollTo(activeIndex.value + 1);
     }
 
@@ -70,7 +98,13 @@ export function useVerticalSnapScroll(options: UseVerticalSnapScrollOptions) {
 
     const delta = e.changedTouches[0].clientY - touchStartY;
 
-    if (delta < -swipeThreshold && activeIndex.value < sections.length - 1) {
+    // Use connected sections for bounds checking
+    const connectedSections = sections.filter((s) => s.isConnected);
+
+    if (
+      delta < -swipeThreshold &&
+      activeIndex.value < connectedSections.length - 1
+    ) {
       scrollTo(activeIndex.value + 1);
     }
 
@@ -87,6 +121,8 @@ export function useVerticalSnapScroll(options: UseVerticalSnapScrollOptions) {
 
   onUnmounted(() => {
     containerRef.value?.removeEventListener("wheel", onWheel);
+    // Clear sections to prevent memory leaks
+    sections.length = 0;
   });
 
   return {
