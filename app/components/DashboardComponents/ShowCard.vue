@@ -7,6 +7,8 @@ const props = withDefaults(defineProps<Props>(), {
   size: "lg",
 });
 
+const isOverlayVisible = ref(false);
+
 // Strip HTML tags from summary for safe display
 const cleanSummary = computed(() => {
   if (!props.show.summary) return "";
@@ -16,41 +18,53 @@ const cleanSummary = computed(() => {
   temp.innerHTML = props.show.summary;
   return temp.textContent || temp.innerText || "";
 });
+
+function toggleOverlay(e: Event) {
+  // On mobile, toggle overlay visibility
+  if (window.innerWidth <= 768) {
+    if (!isOverlayVisible.value) {
+      e.preventDefault();
+      isOverlayVisible.value = true;
+    }
+    // If overlay is visible, let the click through to the NuxtLink
+  }
+}
 </script>
 
 <template>
-  <div class="show-card" :data-size="size">
+  <div
+    class="show-card"
+    :class="{ 'overlay-visible': isOverlayVisible }"
+    :data-size="size"
+    @click="toggleOverlay"
+  >
     <div class="show-card__media">
-      <img v-if="show.image" :src="show.image.medium" />
+      <img v-if="show.image" :src="show.image.medium" :alt="show.name" />
     </div>
 
-    <div class="show-card__overlay">
+    <NuxtLink :to="`/show/${show.id}`" class="show-card__overlay">
       <p class="overlay-text">{{ cleanSummary }}</p>
-    </div>
+    </NuxtLink>
 
     <div class="show-card__content">
       <h3 class="show-card__title">{{ show.name }}</h3>
 
       <div class="show-card__meta">
-        <div v-if="show.rating?.average" class="meta-item">
-          <span class="meta-label">Rating:</span>
-          <span class="meta-value">⭐ {{ show.rating.average }}</span>
-        </div>
+        <MetaCard v-if="show.rating?.average" label="Rating">
+          <Rating :value="show.rating.average" />
+        </MetaCard>
 
-        <div v-if="show.status" class="meta-item">
-          <span class="meta-label">Status:</span>
-          <span class="meta-value">{{ show.status }}</span>
-        </div>
+        <MetaCard v-if="show.status" label="Status">
+          {{ show.status }}
+        </MetaCard>
 
-        <div v-if="show.runtime" class="meta-item">
-          <span class="meta-label">Runtime:</span>
-          <span class="meta-value">{{ show.runtime }} min</span>
-        </div>
+        <MetaCard v-if="show.runtime" label="Runtime">
+          {{ show.runtime }} min
+        </MetaCard>
 
-        <div v-if="show.language" class="meta-item">
-          <span class="meta-label">Language:</span>
-          <span class="meta-value">{{ show.language }}</span>
-        </div>
+        <MetaCard v-if="show.language" label="Language">
+          {{ show.language }}
+        </MetaCard>
       </div>
     </div>
   </div>
@@ -69,6 +83,8 @@ const cleanSummary = computed(() => {
   border: 1px solid var(--border-subtle);
 
   cursor: pointer;
+  text-decoration: none;
+  color: inherit;
   transition: transform var(--transition-base),
     box-shadow var(--transition-base), background-color var(--transition-base);
 }
@@ -125,23 +141,6 @@ const cleanSummary = computed(() => {
   gap: var(--space-1);
 }
 
-.meta-item {
-  display: flex;
-  align-items: center;
-  gap: var(--space-1);
-  font-size: var(--text-sm);
-}
-
-.meta-label {
-  color: var(--text-secondary);
-  font-weight: 500;
-}
-
-.meta-value {
-  color: var(--text-primary);
-  font-weight: 600;
-}
-
 .show-card__overlay {
   position: absolute;
   inset: 0;
@@ -154,10 +153,10 @@ const cleanSummary = computed(() => {
 
   background: rgba(11, 13, 18, 0.6);
   backdrop-filter: blur(8px);
+  text-decoration: none;
 
   opacity: 0;
   transform: translateY(8px);
-  pointer-events: none;
 
   transition: opacity var(--transition-base), transform var(--transition-base);
 }
