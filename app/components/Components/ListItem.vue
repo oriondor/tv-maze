@@ -2,17 +2,17 @@
 import type { ControlProps } from "./ControlElement.vue";
 
 interface Props extends ControlProps {
-  component?: "div" | "button";
+  as?: "div" | "button";
 }
 const props = withDefaults(defineProps<Props>(), {
-  component: "button",
+  as: "button",
   appearance: "control",
 });
 
 const attrs = useAttrs();
 
 const componentProps = computed(() => {
-  if (props.component === "button") {
+  if (props.as === "button") {
     return {
       type: "button",
     };
@@ -27,7 +27,7 @@ const componentProps = computed(() => {
 <template>
   <base-control-element v-bind="props">
     <component
-      :is="component"
+      :is="as"
       class="list-item"
       v-bind="{ ...componentProps, ...attrs }"
     >
