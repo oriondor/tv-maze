@@ -1,7 +1,9 @@
 <script setup lang="ts">
+import { useSessionStorage } from "@vueuse/core";
+
 const { shows, genres } = useShows();
 
-const selectedGenre = ref<string | null>(null);
+const selectedGenre = useSessionStorage("selectedGenre", null);
 
 const groupedShows = computed(() => {
   if (!selectedGenre.value) return null;
