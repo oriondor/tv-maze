@@ -95,3 +95,17 @@ async function runCoverage() {
   freshCache.pagesFetched = page;
   await setShowsCache(freshCache);
 }
+
+/**
+ * This function takes shows that were fetched with the recent search
+ * then merges them into cache and refreshes the genres counts based on full cache
+ * and then broadcast the update to the client
+ */
+export async function addFromSearch(shows: Show[]) {
+  const showsCache = await getShowsCache();
+  showsCache.byId = mergeById(showsCache.byId, shows);
+  await setShowsCache(showsCache);
+  await resetGenreCounts();
+  const newGenreCounts = await setGenreCounts(Object.values(showsCache.byId));
+  broadcastShowsUpdate(shows, newGenreCounts);
+}
