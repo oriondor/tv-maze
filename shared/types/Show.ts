@@ -5,6 +5,9 @@ export interface Show {
   rating: Rating;
   image: Image;
   summary: string;
+  status?: string;
+  runtime?: number;
+  language?: string;
 }
 
 export interface Rating {
