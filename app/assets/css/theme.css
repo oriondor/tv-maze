@@ -80,9 +80,9 @@
   --border-subtle: rgba(255, 255, 255, 0.04);
 
   /* ---------- Shadows ---------- */
-  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.25);
-  --shadow-md: 0 8px 24px rgba(0, 0, 0, 0.35);
-  --shadow-lg: 0 16px 48px rgba(0, 0, 0, 0.45);
+  --shadow-sm: 0 2px 2px rgba(0, 0, 0, 0.25);
+  --shadow-md: 0 8px 6px rgba(0, 0, 0, 0.35);
+  --shadow-lg: 0 16px 8px rgba(0, 0, 0, 0.45);
 
   /* ---------- States ---------- */
   --hover-overlay: rgba(255, 255, 255, 0.04);
