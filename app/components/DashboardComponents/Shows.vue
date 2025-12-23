@@ -12,9 +12,11 @@ const { shows } = toRefs(props);
 const { height } = useWindowSize();
 const isCompactMode = computed(() => height.value > 470 && height.value < 1030);
 
+const isSearchOpen = ref(false);
+
 const { containerRef, registerSection, onTouchStart, onTouchEnd } =
   useVerticalSnapScroll({
-    enabled: isCompactMode,
+    enabled: computed(() => isCompactMode.value && !isSearchOpen.value),
   });
 
 const ratingThreshold = 8;
@@ -48,7 +50,10 @@ const sortedByRating = computed(() => {
     @touchend="onTouchEnd"
   >
     <section :ref="registerSection">
-      <h1>Top rated shows</h1>
+      <div class="top-navigation">
+        <h1>Top rated shows</h1>
+        <Search v-model="isSearchOpen" />
+      </div>
       <div class="shows-top">
         <show-card v-for="show in sortedByRating.top" :key="show.id" :show />
       </div>
@@ -76,6 +81,12 @@ const sortedByRating = computed(() => {
   align-items: stretch;
   gap: var(--space-2);
   padding-inline: var(--space-2);
+
+  .top-navigation {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
 }
 
 .shows-top,

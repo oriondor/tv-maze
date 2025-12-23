@@ -153,13 +153,18 @@ function getStatusVariant(status?: string) {
     </section>
   </div>
 
-  <div v-else class="not-found">
-    <h1>Show not found</h1>
-    <p>The show you're looking for doesn't exist.</p>
-    <base-button @click="navigateTo('/')" variant="primary">
-      Back to Home
-    </base-button>
-  </div>
+  <base-empty-state
+    v-else
+    class="not-found"
+    title="Show not found"
+    description="The show you're looking for doesn't exist."
+  >
+    <template #description-addon>
+      <base-button @click="navigateTo('/')" variant="primary">
+        Back to Home
+      </base-button>
+    </template>
+  </base-empty-state>
 </template>
 
 <style scoped lang="scss">
@@ -280,23 +285,6 @@ function getStatusVariant(status?: string) {
 }
 
 .not-found {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
   min-height: 100vh;
-  gap: var(--space-4);
-  text-align: center;
-  padding: var(--space-4);
-
-  h1 {
-    font-size: var(--text-2xl);
-    margin: 0;
-  }
-
-  p {
-    color: var(--text-secondary);
-    margin: 0;
-  }
 }
 </style>

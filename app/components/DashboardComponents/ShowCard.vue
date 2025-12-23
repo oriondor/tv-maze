@@ -1,6 +1,6 @@
 <script setup lang="ts">
 interface Props {
-  size?: "sm" | "lg";
+  size?: "sm" | "lg" | "auto";
   show: Show;
 }
 const props = withDefaults(defineProps<Props>(), {
@@ -96,7 +96,12 @@ function toggleOverlay(e: Event) {
 
 .show-card[data-size="sm"] {
   width: clamp(300px, 60vw, 450px);
-  height: 180px;
+  height: 200px;
+}
+
+.show-card[data-size="auto"] {
+  width: 100%;
+  height: 200px;
 }
 
 .show-card__media {
@@ -151,7 +156,11 @@ function toggleOverlay(e: Event) {
   justify-content: center;
   padding: var(--space-4);
 
-  background: rgba(11, 13, 18, 0.6);
+  background: color-mix(
+    in srgb,
+    var(--bg-surface-elevated) 60%,
+    transparent 40%
+  );
   backdrop-filter: blur(8px);
   text-decoration: none;
 
