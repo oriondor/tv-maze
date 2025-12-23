@@ -11,6 +11,7 @@ A real-time TV show discovery platform built with Nuxt 4, featuring intelligent 
 - [Design Patterns](#design-patterns)
 - [Data Flow](#data-flow)
 - [Performance Optimizations](#performance-optimizations)
+- [Testing](#testing)
 - [Getting Started](#getting-started)
 
 ## Architecture Overview
@@ -48,11 +49,13 @@ This application demonstrates a modern full-stack architecture with clean separa
 ## Tech Stack
 
 ### Core Framework
+
 - **Nuxt 4.2.2** - Full-stack Vue framework with SSR/SSG capabilities
 - **Vue 3.5.25** - Composition API for reactive UI components
 - **TypeScript** - End-to-end type safety
 
 ### State & Reactivity
+
 - **VueUse** - Composition utilities library
   - `useSessionStorage` - Persistent genre selection
   - `useColorMode` - Automatic theme management
@@ -60,17 +63,20 @@ This application demonstrates a modern full-stack architecture with clean separa
   - `useDebounceFn` - Search input debouncing
 
 ### Styling
+
 - **Sass** - CSS preprocessing
 - **CSS Variables** - Design token system with theme support
 - **CSS Grid & Flexbox** - Modern responsive layouts
 
 ### Backend
+
 - **Nitro** - Nuxt's built-in server engine
 - **h3** - Underlying HTTP framework
 - **EventSource API** - Native browser SSE client
 - **Nuxt Storage** - Unified storage abstraction for caching
 
 ### External API
+
 - **TVMaze API** - TV show data source
 
 ## Project Structure
@@ -135,11 +141,13 @@ This application demonstrates a modern full-stack architecture with clean separa
 The application implements a **genre coverage algorithm** that optimizes data fetching:
 
 **Cold Start (No Cache)**
+
 - Fetches shows page-by-page until minimum coverage is achieved (10 shows per genre)
 - Maximum 10 pages to prevent excessive API calls
 - Early termination when genre requirements are satisfied
 
 **Warm Start (Cache Available)**
+
 - Remembers how many pages were fetched in previous session (`pagesFetched` metadata)
 - Refetches exact same number of pages on restart for consistency
 - Recalculates all genre counts from fresh cache
@@ -158,18 +166,20 @@ export async function ensureFullCoverage() {
 ### 2. Real-Time Updates via Server-Sent Events
 
 **Pub/Sub Architecture**
+
 - Server maintains registry of active SSE connections
 - Broadcasts incremental updates to all connected clients
 - Automatic cleanup on client disconnection
 
 **Two-Phase Client Initialization**
+
 1. **Phase 1**: HTTP GET `/api/shows` - Fast initial data load
 2. **Phase 2**: EventSource `/api/shows/stream` - Real-time updates
 
 ```typescript
 interface BroadcastResponse {
-  shows: Show[] | null;      // Incremental updates (null = recalc only)
-  genres: GenreCounts;        // Always contains current state
+  shows: Show[] | null; // Incremental updates (null = recalc only)
+  genres: GenreCounts; // Always contains current state
 }
 ```
 
@@ -189,6 +199,7 @@ export async function addFromSearch(shows: Show[]) {
 ```
 
 **Benefits:**
+
 - Future searches find previously discovered shows
 - Genre counts remain accurate
 - All clients receive updates, not just the searcher
@@ -208,17 +219,20 @@ When user types rapidly, only the latest request completes; all previous request
 ### 5. Adaptive UI Components
 
 **Vertical Snap Scroll**
+
 - Only enabled on medium-height viewports (470px - 1030px)
 - Disabled when search modal is open
 - Handles both wheel and touch events
 - Filters out disconnected DOM elements for robustness
 
 **Responsive Genre Filter**
+
 - Mobile: Drawer overlay with toggle button
 - Desktop: Persistent sidebar
 - Selection persists via `useSessionStorage`
 
 **Show Card Sizing**
+
 - `lg`: Large cards for top-rated shows (400-600px)
 - `sm`: Compact cards for grid layouts (300-450px)
 - `auto`: Fluid width for modal/container contexts (100%)
@@ -238,54 +252,66 @@ Time-based theme management with recursive scheduling:
 ### Caching Patterns
 
 **Normalization Pattern**
+
 ```typescript
 interface ShowsCache {
-  byId: Record<number, Show>;  // O(1) lookups, no duplicates
-  pagesFetched: number;         // Revalidation metadata
+  byId: Record<number, Show>; // O(1) lookups, no duplicates
+  pagesFetched: number; // Revalidation metadata
 }
 ```
 
 **Cache-Aside Pattern**
+
 - Check cache first, fetch on miss, populate cache
 
 **Write-Through Pattern**
+
 - Search results immediately merge into cache
 
 **Revalidation Pattern**
+
 - Stores metadata to intelligently refetch on restart
 
 ### Service Layer Patterns
 
 **Facade Pattern**
+
 - `shows.service` coordinates cache, API, streaming, and genres
 
 **Singleton Pattern**
+
 - `coveragePromise` ensures only one coverage run executes globally
 
 **Strategy Pattern**
+
 - Cold start vs. warm start fetching strategies
 
 ### Composable Patterns
 
 **Higher-Order Function**
+
 - `useDeduped` wraps any async function with abort logic
 
 **Decorator Pattern**
+
 - Enhances functions with cross-cutting concerns (cancellation, debouncing)
 
 ### Component Patterns
 
 **Polymorphic Components**
+
 ```vue
 <base-button as="a" href="/show/1">View Show</base-button>
 <base-button as="button" @click="submit">Submit</base-button>
 ```
 
 **Controlled Components**
+
 - `v-model` for two-way data binding
 - `defineModel` for cleaner component APIs
 
 **Compound Components**
+
 - Modal + Search + Input work together as a composed unit
 
 ## Data Flow
@@ -391,6 +417,147 @@ All clients update
 2. **Scroll Section Cleanup** - Filters disconnected elements, clears array on unmount
 3. **AbortController Cleanup** - Controllers cleared after request completion
 
+## Testing
+
+### Testing Philosophy
+
+This project follows a **pragmatic testing approach** focused on testing critical business logic rather than achieving 100% coverage across all files. Tests are concentrated on:
+
+1. **Pure functions** - Deterministic, easy to test, foundation of the app
+2. **Core business logic** - Genre coverage algorithm, data transformations
+3. **Complex utilities** - Request deduplication, abort handling
+
+**What we DON'T test (by design):**
+
+- Thin wrapper functions around Nuxt/framework APIs (e.g., cache getters/setters)
+- Components (better suited for E2E tests)
+- SSE streaming (requires integration testing)
+- Time-based logic (difficult to unit test reliably)
+
+### Test Structure
+
+```
+/tv-shows/
+├── shared/utils/__tests__/
+│   ├── mergeById.test.ts          # 6 tests - Data normalization
+│   ├── sortByRating.test.ts       # 7 tests - Array sorting
+│   └── getPerGenre.test.ts        # 8 tests - Filtering logic
+├── server/services/__tests__/
+│   └── genres.service.test.ts     # 7 tests - Genre coverage algorithm
+└── app/composables/__tests__/
+    └── useDeduped.test.ts         # 10 tests - Request deduplication
+```
+
+### Coverage Summary
+
+```
+All files: 38 tests passing
+
+✓ Pure Utility Functions - 100% coverage
+  ├─ mergeById.ts       - O(1) show normalization
+  ├─ sortByRating.ts    - Descending sort with null handling
+  └─ getPerGenre.ts     - Genre filtering
+
+✓ Core Business Logic - Critical paths covered
+  └─ genresSatisfied()  - MIN_SHOWS_PER_GENRE threshold logic
+
+✓ Complex Composables - 100% coverage
+  └─ useDeduped()       - AbortController, race conditions, cleanup
+```
+
+### Test Configurations
+
+The project uses **separate Vitest configurations** for optimal performance:
+
+**`vitest.config.unit.ts`** - Pure functions (Node environment)
+
+- Runs in Node.js (no DOM overhead)
+- Faster execution (~289ms)
+- Tests: `shared/utils`, `server/services`
+
+**`vitest.config.component.ts`** - Composables (happy-dom environment)
+
+- Simulates browser APIs (AbortController, EventSource, etc.)
+- Tests that need DOM/browser features (~625ms)
+- Tests: `app/composables`
+
+### Running Tests
+
+```bash
+# Run all tests (unit + component)
+npm test
+
+# Run only unit tests (faster, for TDD)
+npm run test:unit
+
+# Run only component tests
+npm run test:component
+
+# Watch mode - re-run on file changes
+npm run test:watch              # Unit tests
+npm run test:watch:component    # Component tests
+
+# Generate coverage report
+npm run test:coverage
+
+# View HTML coverage report
+open coverage/index.html
+```
+
+### Example Test Pattern
+
+Tests follow the **Arrange-Act-Assert** pattern with descriptive names:
+
+```typescript
+describe("mergeById", () => {
+  it("should merge shows into an empty target", () => {
+    // ARRANGE - Set up test data
+    const target: ShowById = {};
+    const incoming: Show[] = [createMockShow(1, "Show 1")];
+
+    // ACT - Execute the function
+    const result = mergeById(target, incoming);
+
+    // ASSERT - Verify the outcome
+    expect(result).toEqual({
+      1: createMockShow(1, "Show 1"),
+    });
+  });
+});
+```
+
+### Key Testing Decisions
+
+**Why separate configs?**
+
+- Unit tests run **2x faster** without DOM overhead
+- Clear separation: Node environment vs. browser environment
+- Explicit about which tests need which APIs
+
+**Why not test cache wrappers?**
+
+- Thin wrappers around `useStorage` (Nuxt API)
+- Better tested via integration/E2E tests
+- Core logic (merge, count) is already tested
+
+**Why not test SSE/streaming?**
+
+- Requires running server + client
+- Better suited for integration tests
+- Pub/sub pattern is simple enough to verify manually
+
+**Why not test components?**
+
+- Component tests often become brittle
+- E2E tests provide better confidence for UI
+- Focus on business logic, not markup
+
+### Tech Stack
+
+- **Vitest** - Fast, Vite-native test runner
+- **happy-dom** - Lightweight DOM implementation for browser APIs
+- **@vue/test-utils** - Official Vue testing utilities (installed, ready for future use)
+
 ## Getting Started
 
 ### Prerequisites
@@ -421,11 +588,13 @@ The application uses the public TVMaze API and requires no environment variables
 ### Configuration
 
 **Nuxt Config** (`nuxt.config.ts`):
+
 - Auto-imports for components and composables
 - Base component prefix configuration
 - TypeScript strict mode
 
 **Design Tokens** (`app/assets/css/main.scss`):
+
 - CSS variables for colors, spacing, typography, shadows
 - Dark/light mode themes
 - Transition/animation timings
@@ -439,13 +608,16 @@ npm run dev
 Access the application at `http://localhost:3000`
 
 **Available Routes:**
+
 - `/` - Main dashboard with genre filtering
 - `/show/:id` - Individual show detail page
 
 **SSE Endpoint:**
+
 - `http://localhost:3000/api/shows/stream`
 
 **API Endpoints:**
+
 - `GET /api/shows` - Initial cache state
 - `GET /api/search?query=:term` - Search shows
 
@@ -458,8 +630,9 @@ This application demonstrates production-grade patterns:
 3. **Scalability Patterns** - Singleton coverage, pub/sub streaming, cache abstraction
 4. **Type Safety** - TypeScript throughout, shared types, function overloading
 5. **Modern Patterns** - Composition API, SSE, CSS Grid, design tokens
-6. **Production-Ready** - Error handling, cleanup, graceful degradation
-7. **Developer Experience** - Nuxt auto-imports, file-based routing, clear structure
+6. **Testing** - 38 tests covering critical business logic, 100% coverage on core functions
+7. **Production-Ready** - Error handling, cleanup, graceful degradation
+8. **Developer Experience** - Nuxt auto-imports, file-based routing, clear structure
 
 The architecture balances **pragmatism** (no over-engineering) with **quality** (proper patterns). It's ready to scale—swap cache backend to Redis, add rate limiting, horizontal scaling—without major refactoring.
 
